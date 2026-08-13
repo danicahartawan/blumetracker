@@ -1,0 +1,11 @@
+.git
+.github
+.terraform
+infra
+node_modules
+dist
+outputs
+*.tfstate*
+terraform.tfvars
+.env*
+

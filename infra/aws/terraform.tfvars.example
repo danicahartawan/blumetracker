@@ -1,0 +1,25 @@
+name        = "blume"
+environment = "dev"
+aws_region  = "us-west-2"
+
+# Keep false until a Blume image has been pushed to ECR.
+use_ecr_image = false
+image_tag     = "replace-with-a-git-sha"
+
+desired_count = 1
+private_tasks = false
+enable_waf    = false
+
+environment_variables = {
+  APP_ENV = "development"
+}
+
+# Automatic DNS + certificate when the domain is hosted in Route 53:
+# domain_name       = "app.example.com"
+# route53_zone_id   = "Z0123456789"
+# Or provide an existing certificate:
+# certificate_arn = "arn:aws:acm:us-west-2:123456789012:certificate/..."
+# create_database = true
+# database_multi_az = false
+# github_repository = "owner/blume"
+# alert_email       = "operations@example.com"

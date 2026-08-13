@@ -1,0 +1,59 @@
+name: Deploy Blume
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: blume-production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-west-2
+  ECR_REPOSITORY: blume-prod
+  ECS_CLUSTER: blume-prod
+  ECS_SERVICE: blume
+  CONTAINER_NAME: blume
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure short-lived AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push immutable image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build --platform linux/amd64 -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" .
+          docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          echo "IMAGE=$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_ENV"
+
+      - name: Create task-definition revision
+        run: |
+          aws ecs describe-task-definition --task-definition "$ECS_CLUSTER" --query taskDefinition > task-definition.json
+          jq --arg image "$IMAGE" --arg container "$CONTAINER_NAME" '
+            .containerDefinitions |= map(if .name == $container then .image = $image else . end)
+            | del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)
+          ' task-definition.json > next-task-definition.json
+          TASK_DEFINITION_ARN="$(aws ecs register-task-definition --cli-input-json file://next-task-definition.json --query taskDefinition.taskDefinitionArn --output text)"
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --task-definition "$TASK_DEFINITION_ARN"
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+
