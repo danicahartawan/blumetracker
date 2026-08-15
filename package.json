@@ -11,14 +11,17 @@
   "dependencies": {
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",
-    "vite": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "vite": "latest",
     "xlsx": "latest"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
+    "@openai/sites-vite-plugin": "0.1.0",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "typescript": "latest"
+    "typescript": "latest",
+    "wrangler": "4.92.0"
   }
 }

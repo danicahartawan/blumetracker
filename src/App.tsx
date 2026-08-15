@@ -1,59 +1,74 @@
-import { useRef, useState } from "react";
-import { ArrowDownUp, ChevronDown, Columns3, Filter, FolderPlus, Globe2, Home, Inbox, Mail, MoreHorizontal, MousePointer2, PanelLeft, Plus, Radio, Redo2, Search, Share2, Sparkles, TableProperties, Undo2, Upload, UsersRound, Zap } from "lucide-react";
-import * as XLSX from "xlsx";
-import { integrations } from "./integrations";
+import { useState } from "react";
+import {
+  ArrowRight, Boxes, ChevronDown, Cloud, Code2, GitBranch, Globe2,
+  Menu, ShieldCheck, X,
+} from "lucide-react";
 
-type Row = Record<string, string | number | boolean>;
-const starter = "/starter-order-control.xlsx";
-const defaultColumns = ["NetSuite Order ID","Customer","PO Number","Order Date","Requested Ship Date","Order Value","NetSuite Status","Customer Rules Status","Special Handling Required","Warehouse Request Status","Typeform Response ID","S1C Status","Automation Hold","Human Review","BOL Status","Tracking Number","Blocker","Next Action","Owner","Last Updated"];
+export default function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
 
-export default function App(){
-  const input = useRef<HTMLInputElement>(null);
-  const [name,setName]=useState("NetSuite Orders");
-  const [columns,setColumns]=useState(defaultColumns);
-  const [rows,setRows]=useState<Row[]>([]);
-  const [selected,setSelected]=useState<{r:number;c:number}|null>(null);
-  const [connected,setConnected]=useState(true);
-  const [view,setView]=useState<"sheet"|"sources">("sheet");
+  const scrollTo = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    setMenuOpen(false);
+  };
 
-  async function load(file?:File){
-    if(!file)return;
-    const wb=XLSX.read(await file.arrayBuffer());
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const data=XLSX.utils.sheet_to_json<Row>(ws,{defval:""});
-    const headers=(XLSX.utils.sheet_to_json<(string|number)[]>(ws,{header:1,blankrows:false})[0]||[]).map(String);
-    setColumns(headers.length?headers:defaultColumns); setRows(data); setName(file.name.replace(/\.[^.]+$/, "")); setConnected(true);
-  }
-  const cellValue=selected ? String(rows[selected.r]?.[columns[selected.c]]??"") : "Select cell";
-  return <div className="pd-app">
-    <aside className="pd-sidebar">
-      <div className="workspace-switch"><span className="avatar">D</span><strong>Danica Aurelie's …</strong><ChevronDown size={14}/><button><PanelLeft size={16}/></button></div>
-      <div className="new-sheet"><button className="sheet-name" onClick={()=>{setName("NetSuite Orders");setColumns(defaultColumns);setRows([]);setConnected(true)}}>New sheet</button><button className="blue-square"><Plus size={16}/></button><button className="outline-square" onClick={()=>input.current?.click()}><Upload size={15}/></button></div>
-      <nav><button><Search size={15}/>Search</button><button onClick={()=>setView("sheet")} className={view==="sheet"?"active":""}><Home size={15}/>Orders</button><button onClick={()=>setView("sources")} className={view==="sources"?"active":""}><MousePointer2 size={15}/>Connections</button><button><Inbox size={15}/>Email intake</button></nav>
-      <Section title="Shared"><button><UsersRound size={15}/>Shared with me</button><button><Globe2 size={15}/>Public sheets</button></Section>
-      <Section title="Private"><button className="active"><Columns3 size={14}/>{name}</button></Section>
-      <Section title="Team"/>
-      <button className="help">? </button>
-    </aside>
-    <section className="pd-sheet">
-      {view==="sources" ? <SourcesPanel onBack={()=>setView("sheet")}/> : <>
-      <header className="sheet-top"><div className="title"><span>{name}</span><MoreHorizontal size={16}/></div><div className="top-tools"><button><Undo2 size={16}/></button><button><Redo2 size={16}/></button><i/><button>Auto <ChevronDown size={13}/></button><span className="credits"><b/>500 credits</span><button className="enrich"><Sparkles size={15}/> Enrich</button><button className="share"><Share2 size={15}/> Share</button></div></header>
-      <div className="subbar"><span>{cellValue}</span><div><button><Zap size={14}/>Run order: <strong>Sequential</strong><ChevronDown size={13}/></button><button><Radio size={14}/>Signals</button><button><Filter size={15}/></button><button><ArrowDownUp size={15}/></button><button><Columns3 size={15}/></button><button><Mail size={15}/></button><button><Search size={15}/></button></div></div>
-      {!connected ? <div className="blank-sheet">
-        <div className="blank-grid" aria-hidden="true"/>
-        <div className="blank-card"><span className="blank-icon"><Columns3 size={22}/></span><h2>NetSuite orders workflow</h2><p>Start with blank order, customer-rules, and warehouse-request tabs.</p><button className="import-main" onClick={()=>input.current?.click()}><Upload size={15}/>Import sheet</button><a href={starter} download>Download workflow</a></div>
-      </div> : <Grid columns={columns} rows={rows} selected={selected} setSelected={setSelected}/>} 
-      <footer><button onClick={()=>setRows([...rows,{}])}><Plus size={15}/>Add row<ChevronDown size={13}/></button></footer></>}
-    </section>
-    <input hidden ref={input} type="file" accept=".xlsx,.xls,.csv" onChange={e=>load(e.target.files?.[0])}/>
-  </div>
+  return (
+    <main>
+      <nav className="nav shell" aria-label="Main navigation">
+        <button className="brand" onClick={() => scrollTo("top")} aria-label="opentabs home">
+          <span className="asterisk">✳</span> opentabs
+        </button>
+        <div className={`nav-links ${menuOpen ? "open" : ""}`}>
+          <button onClick={() => scrollTo("product")}>Product</button>
+          <button onClick={() => scrollTo("how")}>Pricing</button>
+          <button onClick={() => scrollTo("top")}>Resources <ChevronDown size={13}/></button>
+          <button onClick={() => scrollTo("open-source")}>Updates</button>
+          <button onClick={() => scrollTo("contact")}>Contact</button>
+        </div>
+        <div className="nav-actions">
+          <button className="language"><Globe2 size={15}/> English</button>
+          <a className="text-link" href="https://github.com" target="_blank" rel="noreferrer">Log in</a>
+          <button className="pill dark small" onClick={() => scrollTo("top")}>Get started</button>
+          <button className="menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X /> : <Menu />}</button>
+        </div>
+      </nav>
+
+      <section className="hero shell" id="top">
+        <div className="hero-grid">
+          <div className="hero-left">
+            <h1>Build your company’s<br /><span>software stack</span></h1>
+            <div className="hero-actions">
+              <button className="pill dark" onClick={() => scrollTo("top")}>Start building</button>
+              <button className="pill light" onClick={() => window.location.href = "mailto:hello@opentabs.dev"}>Contact sales</button>
+            </div>
+          </div>
+          <div className="hero-copy">
+            <p>opentabs is the trusted production environment for software built by your team and AI agents. Deploy behind company login, approve changes, manage connections, and know when anything needs attention.</p>
+          </div>
+        </div>
+
+        <div className="trust-row">
+          <strong>GitHub</strong><strong>Google Workspace</strong><strong>Microsoft Entra</strong>
+          <strong>Salesforce</strong><strong>NetSuite</strong><strong>Slack</strong>
+        </div>
+
+        <ControlPlane />
+      </section>
+    </main>
+  );
 }
 
-function SourcesPanel({onBack}:{onBack:()=>void}){
- return <div className="sources-page"><header><div><small>ORDER CONTROL</small><h1>Connections</h1><p>The systems required to run the NetSuite order workflow end to end.</p></div><button onClick={onBack}>Back to sheet</button></header><div className="source-flow"><span>Email / PO</span><b>→</b><span>NetSuite</span><b>→</b><span>Typeform / Wrike</span><b>→</b><span>S1C</span><b>→</b><span>Sheet</span></div><div className="source-grid">{integrations.map(x=><article key={x.id}><div className="source-title"><span className={`source-logo ${x.id}`}>{x.name.slice(0,1)}</span><div><h2>{x.name}</h2><p>{x.role}</p></div><em className={x.status}>{x.status==="ready"?"Connector ready":x.status==="needs_auth"?"Needs authentication":"Needs API details"}</em></div><dl><div><dt>Connection</dt><dd>{x.method}</dd></div><div><dt>Next requirement</dt><dd>{x.detail}</dd></div></dl><button className={x.status==="ready"?"ready-button":"setup-button"}>{x.status==="ready"?"Test connector":"Configure"}</button></article>)}</div></div>
-}
-
-function Section({title,children}:{title:string;children?:React.ReactNode}){return <div className="side-section"><div><span>{title}</span><ChevronDown size={12}/><em><TableProperties size={13}/><FolderPlus size={13}/><Upload size={13}/></em></div>{children}</div>}
-function Grid({columns,rows,selected,setSelected}:{columns:string[];rows:Row[];selected:{r:number;c:number}|null;setSelected:(x:{r:number;c:number})=>void}){
- return <div className="grid-wrap"><table><thead><tr><th className="check"><input type="checkbox"/></th>{columns.map(c=><th key={c}><Columns3 size={13}/>{c}</th>)}<th className="add-col"><Plus size={15}/></th></tr></thead><tbody>{rows.length?rows.map((row,r)=><tr key={r}><td className="rownum">{r+1}</td>{columns.map((c,i)=><td onClick={()=>setSelected({r,c:i})} className={selected?.r===r&&selected?.c===i?"selected":""} key={c}>{String(row[c]??"")}</td>)}<td/></tr>):Array.from({length:18},(_,r)=><tr key={r}><td className="rownum">{r+1}</td>{columns.map(c=><td key={c}/>) }<td/></tr>)}</tbody></table></div>
+function ControlPlane() {
+  return <div className="product-frame" aria-label="opentabs control plane preview">
+    <div className="frame-top"><span className="mini-brand"><i /><i /><i /></span><strong>opentabs</strong><div className="frame-search">⌕ Search company apps</div><span className="live-dot">● All systems normal</span><div className="avatar">DA</div></div>
+    <aside><button className="active"><Boxes /> App directory</button><button><Cloud /> Connections</button><button><GitBranch /> Approvals</button><button><ShieldCheck /> Access & audit</button><div className="aside-bottom"><Code2 /> Invite IT <ArrowRight /></div></aside>
+    <div className="workspace">
+      <header><div><small>ACME COMPANY</small><h3>Company software</h3></div><button>+ Add an app</button></header>
+      <div className="metrics"><div><span>Live apps</span><strong>24</strong><em>+3 this month</em></div><div><span>Running well</span><strong>23</strong><em>96% healthy</em></div><div><span>Awaiting approval</span><strong>1</strong><em>Review change →</em></div></div>
+      <div className="table-card">
+        <div className="table-title"><strong>All internal apps</strong><span>Filter <ChevronDown /></span></div>
+        {[["Order control","Operations","Company login","Healthy"],["Vendor onboarding","Finance","3 connections","Healthy"],["Campaign approvals","Marketing","Change pending","Review"],["Support triage","Customer success","Company login","Healthy"]].map(r => <div className="deployment-row" key={r[0]}><span className="customer-icon">{r[0][0]}</span><strong>{r[0]}</strong><span>{r[1]}</span><span>{r[2]}</span><em className={r[3] === 'Healthy' ? 'healthy' : 'update'}>{r[3]}</em><b>•••</b></div>)}
+      </div>
+    </div>
+  </div>;
 }
