@@ -1,74 +1,56 @@
-import { useState } from "react";
-import {
-  ArrowRight, Boxes, ChevronDown, Cloud, Code2, GitBranch, Globe2,
-  Menu, ShieldCheck, X,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowUpDown, Bot, Building2, Calendar, Check, ChevronDown, ChevronRight, Columns3, FileSpreadsheet, Filter, Gift, Home, Inbox, Mail, MoreHorizontal, PanelLeft, Plus, Radio, RefreshCw, Search, Send, Share2, ShoppingBag, Sparkles, Tag, UserRound, X } from "lucide-react";
 
-export default function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
+type OrderType="sample_d2c"|"b2b_wholesale"|"direct_netsuite";
+type Order={id:string;netSuiteId:string;poNumber:string|null;customer:string;location:string;orderDate:string|null;shipDate:string|null;deliverBy:string|null;memo:string;notes?:string;humanIntervention?:string;amount:number|null;shipVia:string;netSuiteStatus:string;owner:string|null;wrikeSubmitted:string|null;asnSent:boolean;workflowStatus:string;nextAction:string;orderType?:OrderType};
+type Sync={count:number;syncedAt:string;fileName?:string};
+type Connection={id:string;name?:string;configured:boolean;ok?:boolean;label?:string;purpose?:string;capabilities?:string[];missing?:string[]};
+type AgentMessage={role:"user"|"agent";text:string;actions?:string[]};
+const cash=new Intl.NumberFormat("en-CA",{style:"currency",currency:"CAD"});
+const day=(v:string|null)=>v?new Intl.DateTimeFormat("en-CA",{month:"short",day:"2-digit",year:"numeric"}).format(new Date(`${v}T12:00:00`)):"";
+const orderTabs:[OrderType,string,React.ReactNode][]=[["sample_d2c","Sample / D2C",<Gift/>],["b2b_wholesale","B2B / Wholesale",<ShoppingBag/>],["direct_netsuite","Large Retail / Direct NS",<Building2/>]];
 
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setMenuOpen(false);
-  };
+function IconButton({children,title,onClick}:{children:React.ReactNode;title:string;onClick?:()=>void}){return <button className="icon-button" title={title} onClick={onClick}>{children}</button>}
+function Status({value,type}:{value:string;type:"workflow"|"netsuite"}){const slug=value.toLowerCase().replaceAll(" ","-");return <span className={`badge ${type} ${slug}`}>{value}</span>}
 
-  return (
-    <main>
-      <nav className="nav shell" aria-label="Main navigation">
-        <button className="brand" onClick={() => scrollTo("top")} aria-label="opentabs home">
-          <span className="asterisk">✳</span> opentabs
-        </button>
-        <div className={`nav-links ${menuOpen ? "open" : ""}`}>
-          <button onClick={() => scrollTo("product")}>Product</button>
-          <button onClick={() => scrollTo("how")}>Pricing</button>
-          <button onClick={() => scrollTo("top")}>Resources <ChevronDown size={13}/></button>
-          <button onClick={() => scrollTo("open-source")}>Updates</button>
-          <button onClick={() => scrollTo("contact")}>Contact</button>
-        </div>
-        <div className="nav-actions">
-          <button className="language"><Globe2 size={15}/> English</button>
-          <a className="text-link" href="https://github.com" target="_blank" rel="noreferrer">Log in</a>
-          <button className="pill dark small" onClick={() => scrollTo("top")}>Get started</button>
-          <button className="menu" onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">{menuOpen ? <X /> : <Menu />}</button>
-        </div>
-      </nav>
-
-      <section className="hero shell" id="top">
-        <div className="hero-grid">
-          <div className="hero-left">
-            <h1>Build your company’s<br /><span>software stack</span></h1>
-            <div className="hero-actions">
-              <button className="pill dark" onClick={() => scrollTo("top")}>Start building</button>
-              <button className="pill light" onClick={() => window.location.href = "mailto:hello@opentabs.dev"}>Contact sales</button>
-            </div>
-          </div>
-          <div className="hero-copy">
-            <p>opentabs is the trusted production environment for software built by your team and AI agents. Deploy behind company login, approve changes, manage connections, and know when anything needs attention.</p>
-          </div>
-        </div>
-
-        <div className="trust-row">
-          <strong>GitHub</strong><strong>Google Workspace</strong><strong>Microsoft Entra</strong>
-          <strong>Salesforce</strong><strong>NetSuite</strong><strong>Slack</strong>
-        </div>
-
-        <ControlPlane />
-      </section>
-    </main>
-  );
-}
-
-function ControlPlane() {
-  return <div className="product-frame" aria-label="opentabs control plane preview">
-    <div className="frame-top"><span className="mini-brand"><i /><i /><i /></span><strong>opentabs</strong><div className="frame-search">⌕ Search company apps</div><span className="live-dot">● All systems normal</span><div className="avatar">DA</div></div>
-    <aside><button className="active"><Boxes /> App directory</button><button><Cloud /> Connections</button><button><GitBranch /> Approvals</button><button><ShieldCheck /> Access & audit</button><div className="aside-bottom"><Code2 /> Invite IT <ArrowRight /></div></aside>
-    <div className="workspace">
-      <header><div><small>ACME COMPANY</small><h3>Company software</h3></div><button>+ Add an app</button></header>
-      <div className="metrics"><div><span>Live apps</span><strong>24</strong><em>+3 this month</em></div><div><span>Running well</span><strong>23</strong><em>96% healthy</em></div><div><span>Awaiting approval</span><strong>1</strong><em>Review change →</em></div></div>
-      <div className="table-card">
-        <div className="table-title"><strong>All internal apps</strong><span>Filter <ChevronDown /></span></div>
-        {[["Order control","Operations","Company login","Healthy"],["Vendor onboarding","Finance","3 connections","Healthy"],["Campaign approvals","Marketing","Change pending","Review"],["Support triage","Customer success","Company login","Healthy"]].map(r => <div className="deployment-row" key={r[0]}><span className="customer-icon">{r[0][0]}</span><strong>{r[0]}</strong><span>{r[1]}</span><span>{r[2]}</span><em className={r[3] === 'Healthy' ? 'healthy' : 'update'}>{r[3]}</em><b>•••</b></div>)}
-      </div>
-    </div>
-  </div>;
+export default function App(){
+ const[orders,setOrders]=useState<Order[]>([]),[sync,setSync]=useState<Sync|null>(null),[loading,setLoading]=useState(true),[query,setQuery]=useState(""),[status,setStatus]=useState("All"),[selected,setSelected]=useState<{row:number;key:string;value:string}|null>(null),[collapsed,setCollapsed]=useState(false);
+ const[connections,setConnections]=useState<Connection[]>([]),[showConnections,setShowConnections]=useState(false),[activeOrder,setActiveOrder]=useState<Order|null>(null),[prompt,setPrompt]=useState(""),[thinking,setThinking]=useState(false),[notice,setNotice]=useState(""),[messages,setMessages]=useState<Record<string,AgentMessage[]>>({});
+ const[scanningInbox,setScanningInbox]=useState(false);
+ const[activeType,setActiveType]=useState<OrderType>("direct_netsuite");
+ const load=async()=>{setLoading(true);try{const [ordersResponse,connectionResponse]=await Promise.all([fetch("/api/orders"),fetch("/api/order-connections")]);const d=await ordersResponse.json();setOrders(d.orders||[]);setSync(d.orderSync||null);if(connectionResponse.ok){const c=await connectionResponse.json();setConnections(c.connections||[])}}finally{setLoading(false)}};
+ useEffect(()=>{load()},[]);
+ const typedOrders=useMemo(()=>orders.filter(o=>(o.orderType||"direct_netsuite")===activeType),[orders,activeType]);
+ const shown=useMemo(()=>typedOrders.filter(o=>[o.netSuiteId,o.poNumber,o.customer,o.owner,o.memo].join(" ").toLowerCase().includes(query.toLowerCase())&&(status==="All"||o.workflowStatus===status)),[typedOrders,query,status]);
+ const blocked=orders.filter(o=>o.workflowStatus==="Blocked").length;
+ const connected=connections.filter(c=>c.configured&&(c.ok!==false)).length;
+ const refreshStatuses=async()=>{setLoading(true);setNotice("");try{const r=await fetch("/api/orders/refresh",{method:"POST"});const d=await r.json();if(!r.ok)throw new Error(d.error||"Refresh failed");setOrders(d.orders||orders);setSync(d.orderSync||sync);setNotice(d.orderSync?.detail||"Statuses refreshed")}catch(e){setNotice(e instanceof Error?e.message:"Refresh failed")}finally{setLoading(false)}};
+ const askAgent=async()=>{if(!activeOrder||!prompt.trim()||thinking)return;const text=prompt.trim(),id=activeOrder.id;setPrompt("");setMessages(m=>({...m,[id]:[...(m[id]||[]),{role:"user",text}]}));setThinking(true);try{const r=await fetch(`/api/orders/${encodeURIComponent(id)}/agent`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt:text})});const d=await r.json();if(!r.ok)throw new Error(d.error||"Agent failed");const result=d.agent||d;setMessages(m=>({...m,[id]:[...(m[id]||[]),{role:"agent",text:result.answer,actions:(result.suggestedActions||[]).map((a:{label:string})=>a.label)}]}))}catch(e){setMessages(m=>({...m,[id]:[...(m[id]||[]),{role:"agent",text:e instanceof Error?e.message:"Agent failed"}]}))}finally{setThinking(false)}};
+ const scanInbox=async()=>{if(scanningInbox)return;setScanningInbox(true);setNotice("Scanning Nevan's inbox…");try{const r=await fetch("/api/orders/intake/gmail",{method:"POST"});const d=await r.json();if(!r.ok)throw new Error(d.error||"Inbox scan failed");setOrders(d.orders||[]);setSync(d.orderSync||null);setNotice(`${d.imported?.length||0} new order${d.imported?.length===1?"":"s"} from ${d.scanned||0} email${d.scanned===1?"":"s"}${d.skipped?` · ${d.skipped} already processed`:""}`)}catch(e){setNotice(e instanceof Error?e.message:"Inbox scan failed")}finally{setScanningInbox(false)}};
+ const activeLabel=orderTabs.find(([id])=>id===activeType)?.[1]||"Orders";
+ const cell=(row:number,key:string,value:unknown,content?:React.ReactNode)=><td onClick={()=>setSelected({row,key,value:String(value??"")})} className={selected?.row===row&&selected.key===key?"selected-cell":""}>{content??String(value??"")}</td>;
+ return <div className={`app-shell ${collapsed?"collapsed":""}`}>
+  <aside className="sidebar"><div className="sidebar-inner">
+   <div className="workspace"><div className="avatar">B</div><strong>Blume Operations</strong><ChevronDown/><IconButton title="Collapse sidebar" onClick={()=>setCollapsed(true)}><PanelLeft/></IconButton></div>
+   <div className="new-sheet"><div>{scanningInbox?"Scanning inbox…":"Inbox intake"}</div><button title="Scan Nevan's inbox" onClick={scanInbox}><Inbox/></button></div>
+   <nav><button><Search/>Search</button><button><Home/>Home</button><button onClick={()=>setShowConnections(true)}><Inbox/>Connections <span>{connected}/{connections.length||6}</span></button></nav>
+   <section><h3><ChevronRight/> Private</h3><button className="active"><FileSpreadsheet/>NS Orders ex <span>{orders.length}</span></button><button><Columns3/>Customer setup</button><button><Check/>Workflow tasks <span>{blocked}</span></button></section>
+   <section><h3><ChevronRight/> Shared</h3></section><section><h3><ChevronRight/> Team</h3></section>
+   <div className="connection-card"><div><strong>Order agents</strong><span>{orders.length} active</span></div><small>Every row has a grounded agent. Connected tools become available automatically.</small><button onClick={()=>setShowConnections(true)}>{connected?`${connected} connection${connected===1?"":"s"} ready`:"Configure connections"}</button></div>
+  </div></aside>
+  {collapsed&&<button className="reopen" onClick={()=>setCollapsed(false)}><PanelLeft/></button>}
+  <main className="sheet">
+   <header className="sheet-top"><div><strong>{activeLabel}</strong><span className="saved"><i/> {notice||"Saved locally"}</span><IconButton title="More"><MoreHorizontal/></IconButton></div><div><span className="snapshot">{sync?.fileName||"Local tracker"} · {sync?new Date(sync.syncedAt).toLocaleString():"not imported"}</span><button className="share" onClick={refreshStatuses}><RefreshCw className={loading?"spin":""}/>Refresh statuses</button><button className="share"><Share2/>Share</button></div></header>
+   <nav className="order-tabs" aria-label="Order types">{orderTabs.map(([id,label,icon])=><button key={id} className={activeType===id?"active":""} onClick={()=>{setActiveType(id);setStatus("All")}}>{icon}<span>{label}</span><b>{orders.filter(o=>(o.orderType||"direct_netsuite")===id).length}</b></button>)}</nav>
+   <div className="formula-bar"><div className="cell-value">{selected?.value||"Select a cell"}</div><div className="tools"><button>Agents: <strong>{typedOrders.length} assigned</strong><ChevronDown/></button><button><Radio/>Signals</button><IconButton title="Refresh view" onClick={load}><RefreshCw className={loading?"spin":""}/></IconButton><IconButton title="Sort"><ArrowUpDown/></IconButton><IconButton title="Columns"><Columns3/></IconButton><IconButton title="Email"><Mail/></IconButton></div></div>
+   <div className="filter-row"><div className="search-field"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search orders"/></div><Filter/>{["All","Blocked","Needs review","Ready to release"].map(v=><button key={v} className={status===v?"active":""} onClick={()=>setStatus(v)}>{v}{v==="Blocked"&&` ${blocked}`}</button>)}<span>{shown.length} rows</span></div>
+   <div className="grid-wrap"><table><thead><tr><th className="row-num"><input type="checkbox"/></th><th><Tag/>Document Number</th><th><Tag/>PO #</th><th><Tag/>Customer</th><th><Tag/>Location</th><th><Calendar/>Ship date</th><th><UserRound/>Owner</th><th><Tag/>Amount</th><th><Tag/>Order Status</th><th><Tag/>Workflow Status</th><th><Tag/>Human intervention</th><th><Tag/>Next Action</th><th><Tag/>Notes</th></tr></thead><tbody>
+    {shown.map((o,i)=><tr key={o.id} onDoubleClick={()=>setActiveOrder(o)}><td className="row-num"><button className="agent-dot" title="Open order agent" onClick={()=>setActiveOrder(o)}><Bot/></button></td>{cell(i,"order",o.netSuiteId)}{cell(i,"po",o.poNumber)}{cell(i,"customer",o.customer)}{cell(i,"location",o.location)}{cell(i,"ship",day(o.shipDate))}{cell(i,"owner",o.owner)}{cell(i,"amount",o.amount,o.amount==null?"":cash.format(o.amount))}{cell(i,"ns",o.netSuiteStatus,<Status value={o.netSuiteStatus||"Unknown"} type="netsuite"/>)}{cell(i,"workflow",o.workflowStatus,<Status value={o.workflowStatus} type="workflow"/>)}{cell(i,"human",o.humanIntervention,o.humanIntervention?<span className="human-flag">{o.humanIntervention}</span>:"—")}{cell(i,"next",o.nextAction)}{cell(i,"notes",o.notes||o.memo)}</tr>)}
+    {!loading&&shown.length===0&&<tr><td colSpan={13} className="no-results">No matching orders</td></tr>}
+    <tr className="add-row" onClick={scanInbox}><td></td><td colSpan={12}>{scanningInbox?<><RefreshCw className="spin"/> Scanning Nevan's inbox…</>:<><Inbox/> Scan Nevan's inbox for new orders</>}</td></tr>
+   </tbody></table></div>
+  </main>
+  {showConnections&&<div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&setShowConnections(false)}><section className="connections-modal"><header><div><span>WORKSPACE TOOLS</span><h2>Connections</h2><p>Order agents only use systems you explicitly connect.</p></div><IconButton title="Close" onClick={()=>setShowConnections(false)}><X/></IconButton></header><div className="connection-list">{connections.map(c=><article key={c.id}><div className={`connection-icon ${c.configured?"ready":""}`}>{c.configured?<Check/>:<Plus/>}</div><div><strong>{c.name||c.label||c.id.replaceAll("_"," ")}</strong><p>{c.purpose||"Available to order agents when connected."}</p><small>{c.configured?(c.ok===false?"Configured · needs attention":"Connected and available"):`Needs ${(c.missing||[]).join(", ")||"credentials"}`}</small></div><button disabled={!c.configured}>{c.configured?"Manage":"Setup required"}</button></article>)}</div><footer>Gmail OAuth requires a Google Cloud client ID and secret. NetSuite requires a SuiteTalk URL and access token.</footer></section></div>}
+  {activeOrder&&<aside className="agent-panel"><header><div className="agent-mark"><Bot/></div><div><span>ORDER AGENT</span><strong>{activeOrder.netSuiteId}</strong><small>{activeOrder.customer}</small></div><IconButton title="Close agent" onClick={()=>setActiveOrder(null)}><X/></IconButton></header><div className="agent-context"><Status value={activeOrder.workflowStatus} type="workflow"/><span>{activeOrder.owner||"Unassigned"}</span><span>{day(activeOrder.shipDate)||"No ship date"}</span></div><div className="agent-messages">{!(messages[activeOrder.id]?.length)&&<div className="agent-welcome"><Sparkles/><h3>Ask about this order</h3><p>I can review blockers, summarize evidence, draft next steps, and explain what each connected system can do.</p>{["What is blocking this order?","What should I do next?","Check this order across all connections"].map(q=><button key={q} onClick={()=>setPrompt(q)}>{q}</button>)}</div>}{(messages[activeOrder.id]||[]).map((m,i)=><div key={i} className={`message ${m.role}`}><span>{m.role==="agent"?"Agent":"You"}</span><p>{m.text}</p>{m.actions?.length?<ul>{m.actions.map(a=><li key={a}>{a}</li>)}</ul>:null}</div>)}{thinking&&<div className="message agent thinking">Checking order context and connections…</div>}</div><form className="agent-compose" onSubmit={e=>{e.preventDefault();askAgent()}}><textarea value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder={`Ask ${activeOrder.netSuiteId}'s agent…`} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();askAgent()}}}/><button disabled={!prompt.trim()||thinking}><Send/></button><small>Grounded in this row and connected systems · Enter to send</small></form></aside>}
+ </div>
 }

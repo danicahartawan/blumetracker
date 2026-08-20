@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "connections": [
+    {
+      "id": "gmail",
+      "stakeholders": ["order_operations", "sales_customer_service"],
+      "purpose": "Receive customer purchase orders and attachments",
+      "systemOfRecord": false,
+      "preferred": "Gmail API + users.watch via Google Cloud Pub/Sub",
+      "fallback": "Export the message as JSON and ingest it with the CLI",
+      "credentials": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REFRESH_TOKEN", "GMAIL_PUBSUB_TOPIC"],
+      "status": "credentials_required"
+    },
+    {
+      "id": "netsuite",
+      "stakeholders": ["order_operations", "finance", "management"],
+      "purpose": "Canonical customers, sales orders, items, prices, discounts, and order status",
+      "systemOfRecord": true,
+      "preferred": "SuiteTalk REST Record Service + SuiteQL using OAuth 2.0",
+      "fallback": "Export approved saved-search CSV/JSON and plan actions locally; never silently write back",
+      "credentials": ["NETSUITE_ACCOUNT_ID", "NETSUITE_CLIENT_ID", "NETSUITE_CLIENT_SECRET", "NETSUITE_REFRESH_TOKEN"],
+      "status": "vendor_credentials_required"
+    },
+    {
+      "id": "typeform",
+      "stakeholders": ["order_operations", "warehouse_stord"],
+      "purpose": "Capture special warehouse-handling requests after order interpretation",
+      "systemOfRecord": false,
+      "preferred": "Typeform MCP for form administration/analysis; REST API + webhooks for responses",
+      "fallback": "Generate an auditable warehouse-request payload for a human to submit",
+      "credentials": ["TYPEFORM_TOKEN", "TYPEFORM_FORM_ID", "TYPEFORM_WEBHOOK_SECRET"],
+      "status": "credentials_required",
+      "limitations": ["The supported APIs do not submit a response as if they were a respondent"]
+    },
+    {
+      "id": "wrike",
+      "stakeholders": ["order_operations", "warehouse_stord", "management"],
+      "purpose": "Track warehouse request ownership, status, and exceptions",
+      "systemOfRecord": false,
+      "preferred": "Wrike API v4 + webhooks using OAuth 2.0",
+      "fallback": "Create and complete equivalent tasks in the local workflow ledger",
+      "credentials": ["WRIKE_CLIENT_ID", "WRIKE_CLIENT_SECRET", "WRIKE_REFRESH_TOKEN", "WRIKE_FOLDER_ID"],
+      "status": "credentials_required"
+    },
+    {
+      "id": "stord_s1c",
+      "stakeholders": ["warehouse_stord", "transportation_pickup", "order_operations"],
+      "purpose": "Fulfillment, inventory, deliberate automation hold/release, shipment, BOL, and tracking",
+      "systemOfRecord": true,
+      "preferred": "STORD-approved API, EDI, SuiteApp, SFTP, or HTTPS contract for the Blume account",
+      "fallback": "Generate hold/release/BOL tasks and require human evidence before completion",
+      "credentials": ["STORD_BASE_URL", "STORD_API_KEY", "STORD_ORG_ID", "STORD_FACILITY_ID"],
+      "status": "vendor_contract_required",
+      "limitations": ["No authoritative public Blume-specific hold/release endpoints were found"]
+    },
+    {
+      "id": "google_sheets_drive",
+      "stakeholders": ["order_operations", "finance", "management", "it_security"],
+      "purpose": "Human-facing queue, audit view, evidence documents, and meeting reporting",
+      "systemOfRecord": false,
+      "preferred": "Google Sheets API + Drive API using OAuth 2.0 or a file-shared service account",
+      "fallback": "Export the workflow ledger as JSON/CSV",
+      "credentials": ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REFRESH_TOKEN", "GOOGLE_SHEET_ID", "GOOGLE_DRIVE_FOLDER_ID"],
+      "status": "credentials_required"
+    },
+    {
+      "id": "aws_private_runtime",
+      "stakeholders": ["it_security", "management"],
+      "purpose": "Private application runtime, database, object storage, audit logs, monitoring, and secrets",
+      "systemOfRecord": false,
+      "preferred": "Least-privilege IAM role on AWS; ECS/Fargate, RDS, S3, CloudWatch, and Secrets Manager",
+      "fallback": "Run locally with encrypted configuration and file-backed ledger for the MVP",
+      "credentials": ["AWS_REGION", "AWS_ROLE_ARN"],
+      "status": "role_required",
+      "limitations": ["Do not deploy or operate the application with the AWS root identity"]
+    }
+  ]
+}

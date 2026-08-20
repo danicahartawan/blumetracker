@@ -4,8 +4,10 @@
 *.tfplan
 terraform.tfvars
 .env
+.env.*
+!.env.orders.example
 .DS_Store
 node_modules/
 dist/
 *.tsbuildinfo
-
+.blume-data/

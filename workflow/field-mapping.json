@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "netsuiteOrder": {
+    "Date": "order.orderDate",
+    "Document Number": "order.netSuiteId",
+    "PO #": "order.poNumber",
+    "Location": "order.location",
+    "Customer": "order.customer",
+    "Ship date (M/D/Y)": "order.shipDate",
+    "Deliver by (M/D/Y)": "order.deliverBy",
+    "Memo": "order.memo",
+    "Wrike submitted?": "warehouseRequest.status",
+    "Amount": "order.amount",
+    "Ship Via": "shipment.shipVia",
+    "Order Status": "order.netSuiteStatus",
+    "Owner": "order.owner",
+    "ASN Sent": "shipment.asnSent"
+  },
+  "customerSetup": {
+    "Business Name (legal company name)": "customer.businessName",
+    "DBA (doing business as name, if any)": "customer.dba",
+    "Billing Address": "customer.billingAddress",
+    "Shipping Address (if different than above)": "customer.shippingAddress",
+    "Invoicing Email (1 email address allowed)": "customer.invoiceEmail",
+    "Alternative Email (if applicable)": "customer.alternateEmail",
+    "EDI Integration required?": "customer.ediRequired",
+    "EDI Contact Email (if Yes to above)": "customer.ediContact",
+    "Currency": "customer.currency",
+    "Price Group": "customer.priceGroup",
+    "Payment Terms": "customer.paymentTerms",
+    "Special payment terms or discounts or other notes": "customer.specialTerms",
+    "Sales Channel": "customer.salesChannel",
+    "Any special shipping instructions": "customer.shippingInstructions",
+    "Additional notes / minimum shelf requirements": "customer.shelfLifeNotes",
+    "Propel Natural Brands Partner?": "customer.propelPartner"
+  }
+}
